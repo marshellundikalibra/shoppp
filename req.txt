@@ -1,8 +1,5 @@
 django
 djangorestframework
-djangorestframework-simplejwt
 python-decouple
 psycopg2-binary
-drf-yasg
-django-filter
 Pillow
