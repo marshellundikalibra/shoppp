@@ -1,8 +1,11 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from .models import MyUser
 # from .utils import send_activation_code 
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.views import TokenObtainPairView
 
+User = get_user_model()
 
 #TO DO serializer
 
@@ -53,11 +56,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     #     # validated_data = {"email":"some@gmail.com", "password":"1234", "password_confirm":"1234"}
     #     return MyUser.objects.create_user(**validated_data)
 
-    def create(self, validated_data):
-        print('CREATING USER WITH DATA:', validated_data)
-        return MyUser.objects.create_user(**validated_data)
+    # def create(self, validated_data):
+    #     print('CREATING USER WITH DATA:', validated_data)
+    #     return MyUser.objects.create_user(**validated_data)
 
-
+    def save(self):
+        data = self.validated_data
+        user = User.objects.create_user(**data)
+        user.set_activation_code()
+        user.send_activation_code()
 
     #     #сделали после activation code from model
     # def create(self, validated_data):#будет создавать юзера надо переопределить потомучто сюда высылаем код активации
@@ -75,31 +82,32 @@ class RegisterSerializer(serializers.ModelSerializer):
 #To DO login Serializer
 
 
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(
-        label=("Password"),
-        style={'input_type': 'password'},
-        trim_whitespace=False
-    )
+class LoginSerializer(TokenObtainPairView):
+    pass
+    # email = serializers.EmailField()
+    # password = serializers.CharField(
+    #     label=("Password"),
+    #     style={'input_type': 'password'},
+    #     trim_whitespace=False
+    # )
 
-    def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
+    # def validate(self, attrs):
+    #     email = attrs.get('email')
+    #     password = attrs.get('password')
 
-        if email and password:
-            user = authenticate(request=self.context.get('request'),
-                                username=email, password=password)
+    #     if email and password:
+    #         user = authenticate(request=self.context.get('request'),
+    #                             username=email, password=password)
 
-            if not user:
-                message= ('Unable to log in with provided credentials.')
-                raise serializers.ValidationError(message, code='authorization')
-        else:
-            message = ('Must include "username" and "password".')
-            raise serializers.ValidationError(message, code='authorization')
+    #         if not user:
+    #             message= ('Unable to log in with provided credentials.')
+    #             raise serializers.ValidationError(message, code='authorization')
+    #     else:
+    #         message = ('Must include "username" and "password".')
+    #         raise serializers.ValidationError(message, code='authorization')
 
-        attrs['user'] = user
-        return attrs
+    #     attrs['user'] = user
+    #     return attrs
 "====================================================================================="
 
 
