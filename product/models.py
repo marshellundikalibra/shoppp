@@ -1,4 +1,5 @@
 
+from account.models import MyUser
 
 from django.db import models
 
@@ -35,8 +36,18 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='products')
-    order = models.IntegerField()
+    image = models.ImageField(upload_to='products', blank=True, null=True)
+    # order = models.IntegerField()
+
+class Comment(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
+    comment = models.CharField(max_length=200)
+    created = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(MyUser, on_delete=models.DO_NOTHING, related_name='comments')
+
+
+    def __str__(self):
+        return self.comment
 
 
 

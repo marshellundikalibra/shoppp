@@ -18,6 +18,7 @@ class ProductSerializer(serializers.ModelSerializer):
         
         return representation
 
+
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model=ProductImage
