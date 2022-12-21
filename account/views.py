@@ -5,7 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status 
 from rest_framework.authtoken.views import  ObtainAuthToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 from rest_framework.authtoken.models import Token 
 #Todo register view
 
@@ -18,24 +20,43 @@ class RegisterView(APIView):
             serializer.save()# сохрани данные который ввел пользователь 
             return Response('Successfully signed up!', status=status.HTTP_201_CREATED)
 
+
+@api_view(['DELETE'])
+def delete(request, email):
+    user = get_object_or_404(MyUser, email=email)
+    if user.is_staff:
+        return Response(status=403) # запрещаем
+    user.delete()
+    return Response('Your account successfully deleted', status=status.HTTP_204_NO_CONTENT)
+
+@api_view(["GET"])
+def activate(request, activation_code):
+    user = get_object_or_404(User, activation_code=activation_code)
+    user.is_active = True
+    user.activation_code = ''
+    user.save()
+    return redirect("http://127.0.0.1:8000/admin/")
+
+
+
 #to do activate, login logout view
 from django.shortcuts import redirect
 
-class ActivateView(APIView):
-    def get(self, request, activation_code):
-        User=get_user_model()
-        user=get_object_or_404(User, activation_code=activation_code)#get_object_or_404 а вдруг этого юзера нет 52:04 тогда он будет генерировать 404 а если есть
-        user.is_active=True
-        user.activation_code='' #потому что он не может себя дважды активировать
-        user.save()
-        return redirect("http://127.0.0.1:8000/")
-        # return Response("Your account successfully activated!",status=status.HTTP_200_OK)
+# class ActivateView(APIView):
+#     def get(self, request, activation_code):
+#         User=get_user_model()
+#         user=get_object_or_404(MyUser, activation_code=activation_code)#get_object_or_404 а вдруг этого юзера нет 52:04 тогда он будет генерировать 404 а если есть
+#         user.is_active=True
+#         user.activation_code='' #потому что он не может себя дважды активировать
+#         user.save()
+#         # return redirect("http://127.0.0.1:8000/")
+#         return Response("Your account successfully activated!",status=status.HTTP_200_OK)
 
 
 #если такой юзер существует то ему дается токен
 
 
-class LoginView(ObtainAuthToken):
+class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
  
