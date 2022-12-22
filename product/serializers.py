@@ -10,21 +10,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields='__all__'
 
         #сделать даже не зарегистрированный пользователь может просматривать
-        
-# class ProductSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model=Product
-#         fields=('id','title', 'description', 'category', 'price', 'discount_price','label')
-
-#     def to_representation(self, instance):
-#         rep=super().to_representation(instance)#instance обьект поста
-#         rep['images']=ProductImageSerializer(instance.images.all(),many=True, context=self.context).data
-#         return rep
-
-
-
-
-
+    
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,21 +18,22 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ('id',  'title', 'description','category', 'price', 'discount_price', 'color', 'label',)
 
     def to_representation(self, instance):
+        print(instance)
         representation = super().to_representation(instance)
-        representation['author'] = instance.author.email
+        # representation['author'] = instance.author.email
         representation['category'] = CategorySerializer(instance.category).data
         representation['images'] = ProductImageSerializer(instance.images.all(), many=True, context=self.context).data
         representation['comments'] = CommentSerializer(instance.comments.all(), many=True, context=self.context).data
         representation['likes'] = instance.likes.count()
 
-        rates = Rating.objects.filter(hostel=instance)
+        rates = Rating.objects.filter(product=instance)
         if not rates:
             representation['rating'] = 'null'
         else:
             sum = 0
             for i in rates:
                 sum = sum + i.rating
-            representation['rating'] = Decimal(sum) / Decimal(Rating.objects.filter(hostel=instance).count())
+            representation['rating'] = Decimal(sum) / Decimal(Rating.objects.filter(product=instance).count())
 
         return representation
 
@@ -96,17 +83,17 @@ class CommentSerializer(serializers.ModelSerializer):
         return comment
 
 
-class LikeSerializer(serializers.ModelSerializer):
-    author = serializers.ReadOnlyField(source='author.email')
+# class LikeSerializer(serializers.ModelSerializer):
+#     author = serializers.ReadOnlyField(source='author.email')
 
-    class Meta:
-        model = Like
-        fields = '__all__'
+#     class Meta:
+#         model = Like
+#         fields = '__all__'
 
-    def create(self, validated_data):
-        request = self.context.get('request')
-        likes, obj = Like.objects.update_or_create(author=request.user, **validated_data)
-        return likes
+#     def create(self, validated_data):
+#         request = self.context.get('request')
+#         likes, obj = Like.objects.update_or_create(author=request.user, **validated_data)
+#         return likes
 
 
 class RatingSerializer(serializers.ModelSerializer):
@@ -130,3 +117,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
         favorite, obj = Favorite.objects.update_or_create(author=request.user, **validated_data)
         return favorite
     
+
+class LikeSerialzier(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        exclude = ('author',)

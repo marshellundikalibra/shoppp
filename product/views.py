@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view, action
 from .models import Category, Product, ProductImage
 from rest_framework.response import Response
@@ -9,10 +10,13 @@ from .models import *
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404
 
 from django.utils import timezone
 from datetime import timedelta
 
+
+User = get_user_model()
 # @api_view(['GET'])
 # def categories(request):
 #     if request.method=="GET":
@@ -136,6 +140,8 @@ class ProductViewSet(viewsets.ModelViewSet):
                                 Q(description__icontains=q))#новый кверисет будет этому но отфильтрованный (фильтровать будем по названию и по тексту) in teat__icontains=q храниться тип поиск
         serializer=ProductSerializer(queryset, many=True, context={'request':request})#передаем отфильтрованный queryset
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    
         # после product идет search
 
   
@@ -152,11 +158,6 @@ class ProductImageView(generics.ListAPIView):
 #     serializer_class = CommentSerializer
 #     permission_classes = [IsAuthenticated, IsAuthor]
 
-
-
-'================================================================'
-
-
 class CommentViewSet(PermissionMixin, ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -167,23 +168,23 @@ class CommentViewSet(PermissionMixin, ModelViewSet):
         return context
 
 
-class LikeViewSet(PermissionMixin, ModelViewSet):
-    queryset = Like.objects.all()
-    serializer_class = LikeSerializer
-    permission_classes = [IsAuthenticated]
+# class LikeViewSet(PermissionMixin, ModelViewSet):
+#     queryset = Like.objects.all()
+#     serializer_class = LikeSerializer
+#     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['get'])
-    def my_likes(self, request, pk=None):
-        queryset = self.get_queryset()
-        queryset = queryset.filter(author=request.user)
-        serializers = LikeSerializer(queryset, many=True,
-                                         context={'request': request})
-        return Response(serializers.data, 200)
+#     @action(detail=False, methods=['get'])
+#     def my_likes(self, request, pk=None):
+#         queryset = self.get_queryset()
+#         queryset = queryset.filter(author=request.user)
+#         serializers = LikeSerializer(queryset, many=True,
+#                                          context={'request': request})
+#         return Response(serializers.data, 200)
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['action'] = self.action
-        return context
+#     def get_serializer_context(self):
+#         context = super().get_serializer_context()
+#         context['action'] = self.action
+#         return context
 
 
 class RatingViewSet(PermissionMixin, ModelViewSet):
@@ -222,3 +223,37 @@ class FavoriteViewSet(PermissionMixin, ModelViewSet):
         serializers = FavoriteSerializer(queryset, many=True,
                                          context={'request': request})
         return Response(serializers.data, 200)
+
+class CreateLikeAPIView(APIView):
+    # permission_classes = [IsAuthorOrReadOnly]
+    # @swagger_auto_schema(request_body=LikeSerialzier())
+    def post(self, request):
+        print(request.data)
+        user = request.user
+        ser = LikeSerialzier(data=request.data, context={'request':request})
+        ser.is_valid(raise_exception=True)
+        l_id = request.data.get("product")
+
+        if Like.objects.filter(product_id=l_id,author=user).exists():
+            Like.objects.filter(product_id=l_id,author=user).delete()
+        else:
+            Like.objects.create(product_id=l_id,author=user)
+        return Response(status=201)
+
+# @api_view(['POST'])
+# def toggle_like(request):
+#     product_id = request.data.get("product")
+#     email = request.data.get("email")
+#     post = get_object_or_404(Product, id=product_id)
+#     print(post)
+#     email = get_object_or_404(User, email=email)
+    
+#     # if Like.objects.filter(product=post, author=email).exists():
+#     #     # если был лайк
+#     #     Like.objects.filter(product=post, author=email).delete()
+#     #     # удаляем
+#     # else:
+#     #     # если лайка нет
+#     #     Like.objects.create(product=post, author=email)
+#         # создаем
+#     return Response(status=201)

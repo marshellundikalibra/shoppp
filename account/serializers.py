@@ -84,6 +84,32 @@ class LoginSerializer(TokenObtainPairView):
     pass
 
 
+class ForgotSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        try:
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError('Such email does not found')
+        return attrs
+    
+    def save(self):
+        data = self.validated_data
+        user = User.objects.get(**data)
+        user.set_activation_code()
+        user.password_confirm()
+
+class ChangePasswordSerializer(serializers.Serializer):
+    model = User
+
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(
+        required=True, min_length=8, write_only=True
+    )
+
+# #CREATE
 # class CreateNewPasswordSerializer(serializers.Serializer):
 #     email = serializers.EmailField()
 #     activation_code = serializers.CharField(max_length=40, required=True)

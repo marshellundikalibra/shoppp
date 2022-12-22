@@ -69,12 +69,12 @@ class Comment(models.Model):
 
 
 class Like(models.Model):
-    author = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='likes')
+    author = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='product_likes')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='likes')
-    likes = models.BooleanField(default=False)
+    # likes = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.likes
+    # def __str__(self):
+    #     return self.likes
 
 
 class Rating(models.Model):

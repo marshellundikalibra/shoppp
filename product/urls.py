@@ -1,8 +1,10 @@
-# from django.urls import path
-# from product import views
+from django.urls import path
+from .views import CreateLikeAPIView
 
 
-
+urlpatterns = [
+    path('likefilms/', CreateLikeAPIView.as_view()),
+]
 # urlpatterns=[
 #     # path('categories/', views.categories, name='categories-list'),
 #     path('categories/', views.CategoryListView.as_view(), name='categories-list'),
@@ -18,6 +20,3 @@
 
 
 # ]
-
-
-
