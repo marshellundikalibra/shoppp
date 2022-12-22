@@ -15,11 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from product.views import CategoryListView, ProductViewSet
+from product.views import CategoryListView, ProductViewSet, CommentViewSet, LikeViewSet, RatingViewSet, FavoriteViewSet
 from rest_framework.routers import DefaultRouter
 
 router=DefaultRouter()
 router.register('products',ProductViewSet )
+router.register('comments', CommentViewSet)
+router.register('likes', LikeViewSet)
+router.register('rating', RatingViewSet)
+router.register('favorite', FavoriteViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,5 +32,7 @@ urlpatterns = [
     path('v1/api/categories/', CategoryListView.as_view()),
     path('v1/api/account/', include('account.urls')),
     path('v1/api/',include(router.urls)),
+
+    path('api-auth/', include('drf_social_oauth2.urls',namespace='drf')),
     # path('basket/', include('basket.urls')),
 ]

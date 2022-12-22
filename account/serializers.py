@@ -27,8 +27,6 @@ User = get_user_model()
 
 
 
-# from .models import MyUser
-
 
 class RegisterSerializer(serializers.ModelSerializer):
     password=serializers.CharField(min_length=6, write_only=True)
@@ -81,57 +79,46 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 #To DO login Serializer
 
-
 class LoginSerializer(TokenObtainPairView):
+
     pass
-    # email = serializers.EmailField()
-    # password = serializers.CharField(
-    #     label=("Password"),
-    #     style={'input_type': 'password'},
-    #     trim_whitespace=False
-    # )
-
-    # def validate(self, attrs):
-    #     email = attrs.get('email')
-    #     password = attrs.get('password')
-
-    #     if email and password:
-    #         user = authenticate(request=self.context.get('request'),
-    #                             username=email, password=password)
-
-    #         if not user:
-    #             message= ('Unable to log in with provided credentials.')
-    #             raise serializers.ValidationError(message, code='authorization')
-    #     else:
-    #         message = ('Must include "username" and "password".')
-    #         raise serializers.ValidationError(message, code='authorization')
-
-    #     attrs['user'] = user
-    #     return attrs
-"====================================================================================="
 
 
-# class ForgotSerializer(serializers.Serializer):
+# class CreateNewPasswordSerializer(serializers.Serializer):
 #     email = serializers.EmailField()
+#     activation_code = serializers.CharField(max_length=40, required=True)
+#     password = serializers.CharField(min_length=8, required=True)
+#     password_confirmation = serializers.CharField(min_length=8, required=True)
+
+#     def validate_email(self, email):
+#         if not MyUser.objects.filter(email=email).exists():
+#             raise serializers.ValidationError("Пользователь не найден)")
+#         return email
+
+#     def validate_activation_code(self, act_code):
+#         if not MyUser.objects.filter(activation_code=act_code,
+#                                      is_active=False).exists():
+#             raise serializers.ValidationError('Неверный код активации')
+#         return act_code
 
 #     def validate(self, attrs):
-#         email = attrs.get('email')
-#         try:
-#             User.objects.get(email=email)
-#         except User.DoesNotExist:
-#             raise serializers.ValidationError('Such email does not found')
+#         password = attrs.get('password')
+#         password_confirmation = attrs.pop('password_confirmation')
+#         if password != password_confirmation:
+#             raise serializers.ValidationError('Пароли не совпадают')
 #         return attrs
-    
-#     def save(self):
+
+#     def save(self, **kwargs):
 #         data = self.validated_data
-#         user = User.objects.get(**data)
-#         user.set_activation_code()
-#         user.password_confirm()
-
-# class ChangePasswordSerializer(serializers.Serializer):
-#     model = User
-
-#     old_password = serializers.CharField(required=True)
-#     new_password = serializers.CharField(
-#         required=True, min_length=8, write_only=True
-#     )
+#         email = data.get('email')
+#         activation_code = data.get('activation_code')
+#         password = data.get('password')
+#         try:
+#             user = MyUser.objects.get(email=email, activation_code=activation_code, is_active=False)
+#         except MyUser.DoesNotExist:
+#             raise serializers.ValidationError("Пользователь не найден")
+#         user.is_active = True
+#         user.activation_code = ''
+#         user.set_password(password)
+#         user.save()
+#         return 

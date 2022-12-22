@@ -29,3 +29,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 admin.site.register(Category)
 # admin.site.register(Product)
+admin.site.register(Comment)
+# admin.site.register(LikeComment)
+
+admin.site.register(Rating)
+# admin.site.register(Favourite)

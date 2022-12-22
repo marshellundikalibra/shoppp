@@ -5,6 +5,10 @@ from rest_framework.response import Response
 from .serializers import CategorySerializer, ProductSerializer, ProductImageSerializer
 from rest_framework.views import APIView
 from django.db.models import Q
+from .models import *
+from rest_framework.mixins import UpdateModelMixin
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.pagination import PageNumberPagination
 
 from django.utils import timezone
 from datetime import timedelta
@@ -33,10 +37,44 @@ from datetime import timedelta
 
 from rest_framework import generics , viewsets, status
 from .models import Category, Product, ProductImage
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .permissions import IsAuthorPermission
+from .serializers import *
+from rest_framework.pagination import PageNumberPagination
 
-class CategoryListView(generics.ListAPIView):
+
+class MyPaginationClass(PageNumberPagination):
+    page_size=5
+    def get_paginated_response(self, data):
+        # print(data[0])
+        for i in range(self.page.size):
+            text=data[i]['text']
+            data[i]['text']=text[:10]+'....'
+            # print(data[1]['text'])
+        return super().get_paginated_response(data)
+
+class PermissionMixin:
+    def get_permissions(self):#метод он встроенный
+        print(self.action)#отправляет методы которыми были отправлены запросы
+        if self.action == 'create':
+            permissions = [IsAuthenticated, ]
+        elif self.action in ['update', 'partial_update', 'destroy']:#put, patch. delete
+            permissions = [IsAuthorPermission, ]#тип только автор может удалить
+        else:
+            permissions = []#и тогда он будет использовать только i
+        return [permission() for permission in permissions]
+
+
+
+class CategoryListView(generics.ListAPIView):#setting urls
     queryset=Category.objects.all()
     serializer_class=CategorySerializer
+    permission_classes=[AllowAny, ]
+    pagination_class = MyPaginationClass
+
+
+
+    
 
 # class ProductListView(generics.ListAPIView):
 #     queryset=Product.objects.all()
@@ -62,6 +100,32 @@ class CategoryListView(generics.ListAPIView):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset=Product.objects.all()
     serializer_class=ProductSerializer
+    permission_classes=[AllowAny, ]
+    pagination_class=MyPaginationClass
+
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['action'] = self.action
+        return context
+
+    @action(detail=False, methods=['get'])
+    def my_products(self, request, pk=None):
+        queryset = self.get_queryset()
+        queryset = queryset.filter(author=request.user)
+        serializers =ProductSerializer(queryset, many=True,
+                                       context={'request': request})
+        return Response(serializers.data, 200)
+
+    #фильтрация продукты которые были опубкликованы не позже неделю назад или день
+    # http://127.0.0.1:8000/v1/api/products/?week=1
+    def get_queryset(self):
+        queryset=super().get_queryset()
+        weeks_count=int(self.request.query_params.get('days', 0))#query-params return dict
+        if weeks_count>0:
+            start_data=timezone.now()-timedelta(days=weeks_count)
+            queryset=queryset.filter(created_at__gte=start_data)#фильтрация по  полю created_at
+        return queryset
 
     @action(detail=False, methods=['get'])#action работает nтолько с viewsets если на дженериках то поиск будет проводиться по методу get_queryset
     def search(self, request, pk=None):
@@ -83,3 +147,78 @@ class ProductImageView(generics.ListAPIView):
         return {'request':self.request}
 
 
+# class CommentViewSet(mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, GenericViewSet):
+#     queryset = Comment.objects.all()
+#     serializer_class = CommentSerializer
+#     permission_classes = [IsAuthenticated, IsAuthor]
+
+
+
+'================================================================'
+
+
+class CommentViewSet(PermissionMixin, ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['action'] = self.action
+        return context
+
+
+class LikeViewSet(PermissionMixin, ModelViewSet):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def my_likes(self, request, pk=None):
+        queryset = self.get_queryset()
+        queryset = queryset.filter(author=request.user)
+        serializers = LikeSerializer(queryset, many=True,
+                                         context={'request': request})
+        return Response(serializers.data, 200)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['action'] = self.action
+        return context
+
+
+class RatingViewSet(PermissionMixin, ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def my_ratings(self, request, pk=None):
+        queryset = self.get_queryset()
+        queryset = queryset.filter(author=request.user)
+        serializers = RatingSerializer(queryset, many=True,
+                                         context={'request': request})
+        return Response(serializers.data, 200)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['action'] = self.action
+        return context
+
+
+class FavoriteViewSet(PermissionMixin, ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['action'] = self.action
+        return context
+
+    @action(detail=False, methods=['get'])
+    def my_favorites(self, request, pk=None):
+        queryset = self.get_queryset()
+        queryset = queryset.filter(author=request.user)
+        serializers = FavoriteSerializer(queryset, many=True,
+                                         context={'request': request})
+        return Response(serializers.data, 200)
